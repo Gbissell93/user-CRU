@@ -18,7 +18,7 @@ mongoose
 
 //routes section
 var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+var userRouter = require("./routes/user/userRouter");
 
 var app = express();
 
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use("/", indexRouter);
-app.use("/users", usersRouter);
+app.use("/api/users", userRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -43,7 +43,7 @@ app.use(function (err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.json({ message: "error", error: error.message });
+  res.json({ message: "error", error: err.message });
 });
 
 module.exports = app;
