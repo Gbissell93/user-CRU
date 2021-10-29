@@ -71,4 +71,21 @@ router.delete("/delete-by-id/:id", jwtMiddleware, async function (req, res) {
     res.status(500).json({ message: "error", error: e.message });
   }
 });
+
+router.put("/update-by-id/:id", jwtMiddleware, async function (req, res) {
+  try {
+    let foundTodo = await Todo.findById(req.params.id);
+
+    if (!foundTodo) {
+      res.status(404).json({ message: "todo does not exist" });
+    } else {
+      let updatedTodo = await Todo.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+      });
+      res.json({ message: "success", payload: updatedTodo });
+    }
+  } catch (e) {
+    res.status(500).json({ message: "error", error: e.message });
+  }
+});
 module.exports = router;
