@@ -1,40 +1,12 @@
+require("dotenv").config();
 const User = require("../model/user");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const {
-  isAlpha,
-  isEmail,
-  isAlphaNumeric,
-  isEmpty,
-  isStrongPassword,
-} = require("validator");
 
 const createUser = async (req, res, next) => {
   let body = req.body;
   let errObj = {};
-  const { firstName, lastName, email, password } = req.body;
-
-  for (key in body) {
-    if (isEmpty(body[key])) {
-      errObj[key] = `${key} cannot be empty`;
-    }
-  }
-  if (!isAlpha(firstName)) {
-    errObj.firstName =
-      "First name cannot contain any numbers or special characters.";
-  }
-  if (!isAlpha(lastName)) {
-    errObj.lastName =
-      "Last name cannot contain any numbers or special characters.";
-  }
-
-  if (!isEmail(email)) {
-    errObj.email = "Please enter a valid email";
-  }
-
-  if (!isStrongPassword(password)) {
-    errObj.password =
-      "Password must contain at least 8 characters, upper and lowercase letters a number and special character";
-  }
+  const { firstName, lastName, username, email, password } = req.body;
 
   if (Object.keys(errObj).length > 0) {
     res.status(500).json({ message: "error", error: errObj });
@@ -46,6 +18,7 @@ const createUser = async (req, res, next) => {
       const createdUser = new User({
         firstName,
         lastName,
+        username,
         email,
         password: hashedword,
       });
@@ -62,6 +35,72 @@ const createUser = async (req, res, next) => {
   }
 };
 
+const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    let foundUser = await User.findOne({ email: email });
+
+    if (!foundUser) {
+      return res.status(500).json({
+        message: "error",
+        error: "invalid username or password. please try again",
+      });
+    } else {
+      let passwordCheck = await bcrypt.compare(password, foundUser.password);
+      // console.log(foundUser);
+
+      if (!passwordCheck) {
+        return res.status(500).json({
+          message: "error",
+          error: "invalid username or password. please try again",
+        });
+      } else {
+        let token = jwt.sign(
+          {
+            email: foundUser.email,
+            password: foundUser.password,
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: "2d" }
+        );
+
+        res.json({ message: "success", payload: token });
+      }
+      console.log(foundUser);
+    }
+  } catch (e) {
+    res.status(500).json({ message: "error", error: e.message });
+  }
+};
+
+async function updateUser(req, res) {
+  try {
+    const { firstName, lastName, username, password } = req.body;
+
+    let token = req.headers.authorization.split(" ")[1];
+
+    let decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    let salt = await bcrypt.genSalt(10);
+    let hashedword = await bcrypt.hash(password, salt);
+
+    req.body.password = hashedword;
+
+    let updatedUser = await User.findOneAndUpdate(
+      { email: decoded.email },
+      req.body,
+      { new: true }
+    );
+    let payload = updatedUser;
+    res.json({ message: "Profile Updated", payload: payload });
+  } catch (e) {
+    res.status(500).json({ message: "error", error: e.message });
+  }
+}
+
 module.exports = {
   createUser,
+  login,
+  updateUser,
 };

@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
     },
+    todoList: [{ type: mongoose.Schema.ObjectId, ref: "todo" }],
   },
   {
     timestamps: true,

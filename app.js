@@ -17,8 +17,9 @@ mongoose
   });
 
 //routes section
-var indexRouter = require("./routes/index");
+
 var userRouter = require("./routes/user/userRouter");
+var todoRouter = require("./routes/todo/todoRouter");
 
 var app = express();
 
@@ -27,8 +28,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use("/", indexRouter);
+//router Paths
 app.use("/api/users", userRouter);
+app.use("/api/todo", todoRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
