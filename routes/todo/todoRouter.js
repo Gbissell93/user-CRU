@@ -45,5 +45,30 @@ router.post("/new", jwtMiddleware, async function (req, res) {
   }
 });
 
-router.put("/update", jwtMiddleware, async function (req, res) {});
+router.delete("/delete-by-id/:id", jwtMiddleware, async function (req, res) {
+  try {
+    let deletedTodo = await Todo.findByIdAndDelete(req.params.id);
+
+    if (!deletedTodo) {
+      return res
+        .status(404)
+        .json({ message: "failure", error: "recod not found" });
+    } else {
+      const decoded = res.locals.decoded;
+
+      let foundUser = await User.findOne({ email: decoded.email });
+
+      let newTodoArray = foundUser.todoList.filter((item) => {
+        item._id.toString() !== req.params.id;
+      });
+      foundUser.todoList = newTodoArray;
+
+      await foundUser.save();
+
+      res.json({ message: "item deleted", deleted: deletedTodo });
+    }
+  } catch (e) {
+    res.status(500).json({ message: "error", error: e.message });
+  }
+});
 module.exports = router;
